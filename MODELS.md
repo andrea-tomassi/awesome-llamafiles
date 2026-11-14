@@ -17,7 +17,8 @@ at this checkout.
 
 ## License of the weights
 
-The model weights are **not** covered by this repository's MIT license. They
+The model weights (`*.llamafile`) are **not** covered by this repository's
+MIT license ([LICENSE](./LICENSE) covers docs and repo files only). They
 are released by LiquidAI under the **LFM Open License v1.0**, shipped in full
 in this repository as [`LICENSE.LFM3`](LICENSE.LFM3).
 
