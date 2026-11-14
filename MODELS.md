@@ -1,19 +1,34 @@
-# pi-llamafile-models
+# awesome-llamafiles
 
-Ready-made `.llamafile` weights for the
-[pi-llamafile](https://github.com/andrea-tomassi/pi-llamafile) extension.
-**Distro, not a factory**: these files are copied as-is; building llamafiles
+A curated distro of ready-made `.llamafile` executables: the most useful open
+models, wrapped with the best launch presets for notable scenarios. Host-
+and client-agnostic — anything that speaks to a llamafile server (including
+the [pi-embedded-ai](https://github.com/andrea-tomassi/pi-embedded-ai)
+extension) can use these.
+
+**Distro, not a factory**: these files ship as-is; building llamafiles
 from GGUF (quantization, pinning, CI) is explicitly future work.
 
-Install: copy the files into any directory the extension discovers
-(`~/.pi/agent/models/` is the conventional one), or point `PI_LLAMAFILE_DIR`
-at this checkout.
+Install: copy the files into any directory your client discovers
+(`~/.pi/agent/models/` is the convention for pi-embedded-ai), or point
+`PI_LLAMAFILE_DIR` at this checkout.
 
 ## Models
 
-| File | Source | SHA256 |
-|------|--------|--------|
-| `LFM3-1.7B-QAD-Q4_0.llamafile` (1.05 GB) | LiquidAI LFM3-1.7B QAD Q4_0, wrapped as llamafile v0.10.7 (engine: llama.cpp @ `e853ec9a8`) | `6b01eabc3f1b7f17a68b46b780020f444cc5ee0951f3a7e036f2344cc6697be6` |
+| File | Source | SHA256 | Best for |
+|------|--------|--------|----------|
+| `LFM3-1.7B-QAD-Q4_0.llamafile` (1.05 GB) | LiquidAI LFM3-1.7B QAD Q4_0, llamafile v0.10.7 (engine: llama.cpp @ `e853ec9a8`) | `6b01eabc3f1b7f17a68b46b780020f444cc5ee0951f3a7e036f2344cc6697be6` | coding agent, reasoning, 128k context on ~3 GB RAM |
+
+## Suggested presets
+
+Copy-paste launch settings per scenario (also readable as `PI_LLAMAFILE_*`
+env for pi-embedded-ai):
+
+| Scenario | Model | `--ctx-size` | Notes |
+|----------|-------|--------------|-------|
+| coding agent (default) | LFM3-1.7B-QAD-Q4_0 | 131072 | reasoning on; ~2.7 GB RAM; the OOTB preset |
+| long-context review | LFM3-1.7B-QAD-Q4_0 | 262144 | full trained context; ~4.5 GB RAM |
+| tiny host | LFM3-1.7B-QAD-Q4_0 | 32768 | minimal KV cache; faster load, shorter memory |
 
 ## License of the weights
 
