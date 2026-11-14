@@ -18,6 +18,26 @@ at this checkout.
 ## License of the weights
 
 The model weights are **not** covered by this repository's MIT license. They
-are released by LiquidAI under their open model license; redistribution here
-is with attribution to LiquidAI. Read the model card at
+are released by LiquidAI under the **LFM Open License v1.0**, shipped in full
+in this repository as [`LICENSE.LFM3`](LICENSE.LFM3).
+
+Compliance notes for redistribution:
+
+- **Attribution**: retain all copyright, patent, trademark, and attribution
+  notices (Section 4(c)); the model table above credits LiquidAI as the
+  source of the weights.
+- **Pass the license on**: any recipient of the `.llamafile` (or a derivative
+  work) must get a copy of LICENSE.LFM3 (Section 4(a)).
+- **Mark modifications**: modified files must carry prominent notices stating
+  that you changed them (Section 4(b)).
+- **Commercial threshold**: Commercial Use is licensed only while you or your
+  Legal Entity stays below the Threshold — annual revenue of $10,000,000 or
+  more is *not* licensed under this Agreement (Section 5). Qualified
+  Non-Profit Organizations using the Work for non-commercial or research
+  purposes are exempt from the Threshold.
+- **Automatic termination**: the license terminates automatically and
+  immediately on non-compliance; all copies in your possession must then be
+  deleted (Section 11).
+
+Read the model card at
 https://huggingface.co/LiquidAI/LFM3-1.7B-GGUF before redistributing.
