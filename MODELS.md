@@ -19,6 +19,23 @@ Install: copy the files into any directory your client discovers
 |------|--------|--------|----------|
 | `LFM3-1.7B-QAD-Q4_0.llamafile` (1.05 GB) | LiquidAI LFM3-1.7B QAD Q4_0, llamafile v0.10.7 (engine: llama.cpp @ `e853ec9a8`) | `6b01eabc3f1b7f17a68b46b780020f444cc5ee0951f3a7e036f2344cc6697be6` | coding agent, reasoning, 128k context on ~3 GB RAM |
 
+## Download and verify
+
+The weights are release assets, not files in this repository (GitHub rejects
+blobs over 100 MB). Download, then confirm the checksum before using them:
+
+```sh
+gh release download models-v1 --repo andrea-tomassi/awesome-llamafiles --pattern '*.llamafile'
+sha256sum LFM3-1.7B-QAD-Q4_0.llamafile
+# 6b01eabc3f1b7f17a68b46b780020f444cc5ee0951f3a7e036f2344cc6697be6
+```
+
+Then place it where your client discovers models: `~/.pi/agent/models/` for
+[pi-embedded-ai](https://github.com/andrea-tomassi/pi-embedded-ai), or point
+`PI_LLAMAFILE_DIR` at the directory holding it.
+
+A mismatch means a truncated or tampered download: delete it and fetch again.
+
 ## Suggested presets
 
 Copy-paste launch settings per scenario (also readable as `PI_LLAMAFILE_*`
