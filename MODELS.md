@@ -15,9 +15,27 @@ Install: copy the files into any directory your client discovers
 
 ## Models
 
-| File | Source | SHA256 | Best for |
-|------|--------|--------|----------|
-| `LFM3-1.7B-QAD-Q4_0.llamafile` (1.05 GB) | LiquidAI LFM3-1.7B QAD Q4_0, llamafile v0.10.7 (engine: llama.cpp @ `e853ec9a8`) | `6b01eabc3f1b7f17a68b46b780020f444cc5ee0951f3a7e036f2344cc6697be6` | coding agent, reasoning, 128k context on ~3 GB RAM |
+| File | Release | Source | SHA256 | Best for |
+|------|---------|--------|--------|----------|
+| `LFM3-vulkan.llamafile` (1.06 GB) | `models-v2` | LFM3-1.7B QAD Q4_0 + embedded **Vulkan** backend, llamafile v0.10.7 | `6c95cc8bbfc663bfabc7d18f9bfb5f2339557a35d801d41ef6e0b51720b909ea` | **default pick**: uses a GPU when the host has one, CPU otherwise |
+| `LFM3-1.7B-QAD-Q4_0.llamafile` (1.05 GB) | `models-v1` | LFM3-1.7B QAD Q4_0, CPU-only build | `6b01eabc3f1b7f17a68b46b780020f444cc5ee0951f3a7e036f2344cc6697be6` | smallest, maximum portability (any ABI) |
+
+## GPU support
+
+`LFM3-vulkan.llamafile` carries the Vulkan backend (`ggml-vulkan.so`) **inside the
+single file**: llamafile extracts it on first run and loads it. The launcher must
+leave `--gpu` at its default `auto`, which is what `pi-embedded-ai` does.
+
+| Host | Behaviour |
+|------|-----------|
+| Vulkan device and driver present | model runs on the GPU (`-ngl`/`--gpu-layers` default offloads every layer) |
+| No GPU, no driver, driver crashes on probe | **CPU**, no error: the backend is skipped |
+| Non-x86-64 / non-glibc ABI (musl, macOS, ARM, old glibc) | the DSO does not load: **CPU**, same file still works |
+| `--gpu vulkan` forced on a host without Vulkan | fatal error — never pass an explicit backend |
+
+Caveat: this build used the distro `glslc` (shaderc 2023.8), so the `coopmat2`,
+`integer_dot`, `bfloat16` and `fp8` shader paths are absent. Mainstream NVIDIA/AMD
+paths work; rebuild with the LunarG Vulkan SDK (`VULKAN_SDK=...`) for full coverage.
 
 ## Download and verify
 
@@ -25,6 +43,12 @@ The weights are release assets, not files in this repository (GitHub rejects
 blobs over 100 MB). Download, then confirm the checksum before using them:
 
 ```sh
+# the GPU-capable default
+gh release download models-v2 --repo andrea-tomassi/awesome-llamafiles --pattern '*.llamafile'
+sha256sum LFM3-vulkan.llamafile
+# 6c95cc8bbfc663bfabc7d18f9bfb5f2339557a35d801d41ef6e0b51720b909ea
+
+# the CPU-only, maximum-portability variant
 gh release download models-v1 --repo andrea-tomassi/awesome-llamafiles --pattern '*.llamafile'
 sha256sum LFM3-1.7B-QAD-Q4_0.llamafile
 # 6b01eabc3f1b7f17a68b46b780020f444cc5ee0951f3a7e036f2344cc6697be6
