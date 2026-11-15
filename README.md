@@ -8,16 +8,17 @@ presets, and the license of the weights.
 > A `.llamafile` is over 1 GB, past GitHub's per-file limit for git, so each one
 > ships as a **release asset**:
 >
-> **[⬇ Release `models-v2`](https://github.com/andrea-tomassi/awesome-llamafiles/releases/tag/models-v2)** —
-> `LFM3-vulkan.llamafile` (1.06 GB): same weights with the Vulkan backend embedded,
-> so it uses a GPU when the host has one and CPU otherwise.
 > **[⬇ Release `models-v1`](https://github.com/andrea-tomassi/awesome-llamafiles/releases/tag/models-v1)** —
-> `LFM3-1.7B-QAD-Q4_0.llamafile` (1.05 GB): CPU-only, maximum portability.
+> `LFM3-1.7B-QAD-Q4_0.llamafile` (1.05 GB): the recommended, CPU-only build. Maximum
+> portability; runs anywhere.
+> `models-v2` (`LFM3-vulkan.llamafile`) is **experimental**: the embedded Vulkan DSO
+> does not match this binary's ggml ABI, so it runs on CPU. For GPU inference serve the
+> GGUF with a CUDA build of llama.cpp — see MODELS.md for measured numbers.
 >
 > ```sh
-> gh release download models-v2 --repo andrea-tomassi/awesome-llamafiles --pattern '*.llamafile'
+> gh release download models-v1 --repo andrea-tomassi/awesome-llamafiles --pattern '*.llamafile'
 > # or, without gh:
-> curl -fLO https://github.com/andrea-tomassi/awesome-llamafiles/releases/download/models-v2/LFM3-vulkan.llamafile
+> curl -fLO https://github.com/andrea-tomassi/awesome-llamafiles/releases/download/models-v1/LFM3-1.7B-QAD-Q4_0.llamafile
 > ```
 >
 > Verify it, then drop it where your client looks for models

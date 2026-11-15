@@ -17,25 +17,48 @@ Install: copy the files into any directory your client discovers
 
 | File | Release | Source | SHA256 | Best for |
 |------|---------|--------|--------|----------|
-| `LFM3-vulkan.llamafile` (1.06 GB) | `models-v2` | LFM3-1.7B QAD Q4_0 + embedded **Vulkan** backend, llamafile v0.10.7 | `6c95cc8bbfc663bfabc7d18f9bfb5f2339557a35d801d41ef6e0b51720b909ea` | **default pick**: uses a GPU when the host has one, CPU otherwise |
+| `LFM3-vulkan.llamafile` (1.06 GB) | `models-v2` | LFM3-1.7B QAD Q4_0 + embedded Vulkan DSO, llamafile v0.10.7 | `6c95cc8bbfc663bfabc7d18f9bfb5f2339557a35d801d41ef6e0b51720b909ea` | experimental: the embedded DSO does not match this binary (see below); runs on CPU |
 | `LFM3-1.7B-QAD-Q4_0.llamafile` (1.05 GB) | `models-v1` | LFM3-1.7B QAD Q4_0, CPU-only build | `6b01eabc3f1b7f17a68b46b780020f444cc5ee0951f3a7e036f2344cc6697be6` | smallest, maximum portability (any ABI) |
 
-## GPU support
+## GPU support — status
 
-`LFM3-vulkan.llamafile` carries the Vulkan backend (`ggml-vulkan.so`) **inside the
-single file**: llamafile extracts it on first run and loads it. The launcher must
-leave `--gpu` at its default `auto`, which is what `pi-embedded-ai` does.
+**The `models-v2` artifact does not enable the GPU yet.** It was built by compiling
+llamafile's `vulkan.sh` against the llamafile repository's pinned llama.cpp, but that
+backend does not match the ggml ABI of the v0.10.7 binary: on a machine with a
+Vulkan GPU it loads, enumerates the device, assigns every layer to it, and then
+aborts while creating tensors (`GGML_ASSERT(buft)`, or a segfault). llamafile patches
+its Vulkan backend, and those patches do not apply to the llama.cpp commit the
+binary embeds, so a compatible DSO cannot be produced from this tree. Building the
+llamafile itself with `vulkan.sh` would match by construction; that is the open path.
 
-| Host | Behaviour |
-|------|-----------|
-| Vulkan device and driver present | model runs on the GPU (`-ngl`/`--gpu-layers` default offloads every layer) |
-| No GPU, no driver, driver crashes on probe | **CPU**, no error: the backend is skipped |
-| Non-x86-64 / non-glibc ABI (musl, macOS, ARM, old glibc) | the DSO does not load: **CPU**, same file still works |
-| `--gpu vulkan` forced on a host without Vulkan | fatal error — never pass an explicit backend |
+**What works today on a GPU host**: serve the GGUF with a CUDA build of
+llama.cpp. Measured on the RTX 4060 Ti (16 GB) of `u24-server`, LFM3-1.7B QAD Q4_0,
+32k context:
 
-Caveat: this build used the distro `glslc` (shaderc 2023.8), so the `coopmat2`,
-`integer_dot`, `bfloat16` and `fp8` shader paths are absent. Mainstream NVIDIA/AMD
-paths work; rebuild with the LunarG Vulkan SDK (`VULKAN_SDK=...`) for full coverage.
+| Metric | GPU (CUDA, `-ngl 99`) | CPU (this project's baseline) |
+|--------|----------------------|-------------------------------|
+| prefill | **9206 tok/s** (441 tok) | ~89 tok/s |
+| generation | **172 tok/s** | ~9 tok/s |
+| VRAM | 1650 MiB | — |
+
+```sh
+# on a GPU host, with the GGUF extracted from any .llamafile (it is a zip entry)
+docker run --rm --gpus all -p 8080:8080 -v $PWD:/models \
+  ghcr.io/ggml-org/llama.cpp:server-cuda \
+  -m /models/LFM3-QAD-Q4_0.gguf -ngl 99 -c 32768 --host 0.0.0.0 --port 8080
+```
+
+The extension is client-agnostic: it talks to whatever serves `/v1` and `/props` on
+the port, so a CUDA `llama-server` works exactly like the llamafile.
+
+### Fallback contract (verified)
+
+| Host | Behaviour with `models-v2` |
+|------|---------------------------|
+| Vulkan device and a matching DSO | not achievable yet, see above |
+| No GPU, no driver, driver crashes on probe | **CPU**, no error |
+| Non-x86-64 / non-glibc ABI | the DSO does not load: **CPU** |
+| `--gpu vulkan` forced without Vulkan | fatal error — never pass an explicit backend |
 
 ## Download and verify
 
