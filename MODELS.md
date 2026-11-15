@@ -17,7 +17,7 @@ Install: copy the files into any directory your client discovers
 
 | File | Release | Source | SHA256 | Best for |
 |------|---------|--------|--------|----------|
-| `LFM3-vulkan.llamafile` (1.06 GB) | `models-v2` | LFM3-1.7B QAD Q4_0 + embedded Vulkan DSO, llamafile v0.10.7 | `6c95cc8bbfc663bfabc7d18f9bfb5f2339557a35d801d41ef6e0b51720b909ea` | experimental: the embedded DSO does not match this binary (see below); runs on CPU |
+| `LFM3-vulkan.llamafile` (1.06 GB) | `models-v2` | LFM3-1.7B QAD Q4_0 + embedded Vulkan DSO, llamafile v0.10.7 | `6c95cc8bbfc663bfabc7d18f9bfb5f2339557a35d801d41ef6e0b51720b909ea` | experimental, runs on CPU — see [VULKAN-ATTEMPTS.md](./VULKAN-ATTEMPTS.md) |
 | `LFM3-1.7B-QAD-Q4_0.llamafile` (1.05 GB) | `models-v1` | LFM3-1.7B QAD Q4_0, CPU-only build | `6b01eabc3f1b7f17a68b46b780020f444cc5ee0951f3a7e036f2344cc6697be6` | smallest, maximum portability (any ABI) |
 
 ## Variants at a glance
