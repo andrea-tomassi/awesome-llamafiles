@@ -20,6 +20,32 @@ Install: copy the files into any directory your client discovers
 | `LFM3-vulkan.llamafile` (1.06 GB) | `models-v2` | LFM3-1.7B QAD Q4_0 + embedded Vulkan DSO, llamafile v0.10.7 | `6c95cc8bbfc663bfabc7d18f9bfb5f2339557a35d801d41ef6e0b51720b909ea` | experimental: the embedded DSO does not match this binary (see below); runs on CPU |
 | `LFM3-1.7B-QAD-Q4_0.llamafile` (1.05 GB) | `models-v1` | LFM3-1.7B QAD Q4_0, CPU-only build | `6b01eabc3f1b7f17a68b46b780020f444cc5ee0951f3a7e036f2344cc6697be6` | smallest, maximum portability (any ABI) |
 
+## Variants at a glance
+
+| Need | Asset |
+|------|-------|
+| CPU, single file, runs anywhere | `models-v1` → `LFM3-1.7B-QAD-Q4_0.llamafile` |
+| GPU on NVIDIA, fastest | `models-v3-cuda` → `LFM3-QAD-Q4_0.gguf` + a CUDA `llama.cpp` |
+| AMD / Intel / Apple GPU | the GGUF with a ROCm, Vulkan or Metal build of `llama.cpp` |
+| experimental, unusable GPU path | `models-v2` → `LFM3-vulkan.llamafile` |
+
+### NVIDIA support for `models-v3-cuda`
+
+Verified on an RTX 4060 Ti 16 GB (Ada, CC 8.9, driver 580.178.04) with
+`ghcr.io/ggml-org/llama.cpp:server-cuda` and `-ngl 99`: 9206 tok/s prefill,
+172 tok/s generation, 1.65 GB VRAM at 32k context.
+
+Supported: NVIDIA compute capability 5.0 and newer — Maxwell, Pascal, Volta,
+Turing, Ampere, Ada, Hopper (whatever the CUDA image ships kernels for).
+Not supported: AMD (needs ROCm or Vulkan), Intel (Vulkan/SYCL), Apple (Metal),
+or any host without an NVIDIA driver.
+
+```sh
+docker run --rm --gpus all -p 8080:8080 -v $PWD:/models \
+  ghcr.io/ggml-org/llama.cpp:server-cuda \
+  -m /models/LFM3-QAD-Q4_0.gguf -ngl 99 -c 32768 --host 0.0.0.0 --port 8080
+```
+
 ## GPU support — status
 
 **The `models-v2` artifact does not enable the GPU yet.** It was built by compiling
