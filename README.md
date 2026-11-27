@@ -8,17 +8,23 @@ presets, the GPU status, and the license of the weights.
 > A `.llamafile` is over 1 GB, past GitHub's per-file limit for git, so each one
 > ships as a **release asset**:
 >
-> **[⬇ Release `models-v1`](https://github.com/andrea-tomassi/awesome-llamafiles/releases/tag/models-v1)** —
-> `LFM3-1.7B-QAD-Q4_0.llamafile` (1.05 GB): the recommended, CPU-only build.
-> Maximum portability; runs anywhere. **This is the only supported variant.**
+> **[⬇ Release `models-v4`](https://github.com/andrea-tomassi/awesome-llamafiles/releases/tag/models-v4)**:
+> `LFM3-1.7B-pi-Q6_K.llamafile` (1.47 GB), the recommended build. LFM3-1.7B with
+> the [harness-hub pi LoRA](https://huggingface.co/harness-hub/LFM3-1.7B-pi)
+> merged into the weights, tuned for tool-calling agent work in `pi`. CPU-only,
+> single file, runs anywhere.
 >
 > ```sh
-> gh release download models-v1 --repo andrea-tomassi/awesome-llamafiles --pattern '*.llamafile'
+> gh release download models-v4 --repo andrea-tomassi/awesome-llamafiles --pattern '*.llamafile'
 > # or, without gh:
-> curl -fLO https://github.com/andrea-tomassi/awesome-llamafiles/releases/download/models-v1/LFM3-1.7B-QAD-Q4_0.llamafile
+> curl -fLO https://github.com/andrea-tomassi/awesome-llamafiles/releases/download/models-v4/LFM3-1.7B-pi-Q6_K.llamafile
 > ```
 >
-> Verify it, then drop it where your client looks for models
+> Smallest-footprint alternative, base model without the adapter:
+> [`models-v1`](https://github.com/andrea-tomassi/awesome-llamafiles/releases/tag/models-v1) →
+> `LFM3-1.7B-QAD-Q4_0.llamafile` (1.05 GB).
+>
+> Verify either one, then drop it where your client looks for models
 > (`~/.pi/agent/models/` for pi-embedded-ai, or point `PI_LLAMAFILE_DIR` here).
 
 ## GPU inference

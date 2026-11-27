@@ -7,7 +7,9 @@ the [pi-embedded-ai](https://github.com/andrea-tomassi/pi-embedded-ai)
 extension) can use these.
 
 **Distro, not a factory**: these files ship as-is; building llamafiles
-from GGUF (quantization, pinning, CI) is explicitly future work.
+from GGUF (quantization, pinning, CI) is not automated in this repository.
+The one documented exception is the `models-v4` pi build, whose exact
+provenance is recorded below so it can be reproduced by hand.
 
 Install: copy the files into any directory your client discovers
 (`~/.pi/agent/models/` is the convention for pi-embedded-ai), or point
@@ -17,14 +19,16 @@ Install: copy the files into any directory your client discovers
 
 | File | Release | Source | SHA256 | Best for |
 |------|---------|--------|--------|----------|
+| `LFM3-1.7B-pi-Q6_K.llamafile` (1.47 GB) | `models-v4` | LFM3-1.7B F16 + [harness-hub pi LoRA](https://huggingface.co/harness-hub/LFM3-1.7B-pi) merged, Q6_K, llamafile v0.10.7 | `961125f363ed9746b5e6bf4c30e7711f4dac49a324ee15024811fd9820a8ddf7` | **recommended**: agentic tool calling, tuned for `pi`; CPU-only |
 | `LFM3-vulkan.llamafile` (1.06 GB) | `models-v2` | LFM3-1.7B QAD Q4_0 + embedded Vulkan DSO, llamafile v0.10.7 | `6c95cc8bbfc663bfabc7d18f9bfb5f2339557a35d801d41ef6e0b51720b909ea` | experimental, runs on CPU — see [VULKAN-ATTEMPTS.md](./VULKAN-ATTEMPTS.md) |
-| `LFM3-1.7B-QAD-Q4_0.llamafile` (1.05 GB) | `models-v1` | LFM3-1.7B QAD Q4_0, CPU-only build | `6b01eabc3f1b7f17a68b46b780020f444cc5ee0951f3a7e036f2344cc6697be6` | smallest, maximum portability (any ABI) |
+| `LFM3-1.7B-QAD-Q4_0.llamafile` (1.05 GB) | `models-v1` | LFM3-1.7B QAD Q4_0, CPU-only build | `6b01eabc3f1b7f17a68b46b780020f444cc5ee0951f3a7e036f2344cc6697be6` | smallest footprint: base model without the adapter, maximum portability (any ABI) |
 
 ## Variants at a glance
 
 | Need | Asset |
 |------|-------|
-| CPU, single file, runs anywhere | `models-v1` → `LFM3-1.7B-QAD-Q4_0.llamafile` |
+| CPU, single file, agentic tool calling (**recommended**) | `models-v4` → `LFM3-1.7B-pi-Q6_K.llamafile` |
+| CPU, single file, smallest footprint, no adapter | `models-v1` → `LFM3-1.7B-QAD-Q4_0.llamafile` |
 | GPU on NVIDIA, fastest | `models-v3-cuda` → `LFM3-QAD-Q4_0.gguf` + a CUDA `llama.cpp` |
 | AMD / Intel / Apple GPU | the GGUF with a ROCm, Vulkan or Metal build of `llama.cpp` |
 | experimental, unusable GPU path | `models-v2` → `LFM3-vulkan.llamafile` |
@@ -92,6 +96,11 @@ The weights are release assets, not files in this repository (GitHub rejects
 blobs over 100 MB). Download, then confirm the checksum before using them:
 
 ```sh
+# the recommended build: LFM3-1.7B with the pi LoRA merged into the weights
+gh release download models-v4 --repo andrea-tomassi/awesome-llamafiles --pattern '*.llamafile'
+sha256sum LFM3-1.7B-pi-Q6_K.llamafile
+# 961125f363ed9746b5e6bf4c30e7711f4dac49a324ee15024811fd9820a8ddf7
+
 # the GPU-capable default
 gh release download models-v2 --repo andrea-tomassi/awesome-llamafiles --pattern '*.llamafile'
 sha256sum LFM3-vulkan.llamafile
@@ -116,9 +125,55 @@ env for pi-embedded-ai):
 
 | Scenario | Model | `--ctx-size` | Notes |
 |----------|-------|--------------|-------|
-| coding agent (default) | LFM3-1.7B-QAD-Q4_0 | 131072 | reasoning on; ~2.7 GB RAM; the OOTB preset |
-| long-context review | LFM3-1.7B-QAD-Q4_0 | 262144 | full trained context; ~4.5 GB RAM |
-| tiny host | LFM3-1.7B-QAD-Q4_0 | 32768 | minimal KV cache; faster load, shorter memory |
+| coding agent (default) | LFM3-1.7B-pi-Q6_K | 131072 | adapter-tuned for tool use; ~3.1 GB RAM; the OOTB preset |
+| long-context review | LFM3-1.7B-pi-Q6_K | 262144 | full trained context; ~4.8 GB RAM |
+| tiny host | LFM3-1.7B-pi-Q6_K | 32768 | minimal KV cache; faster load, shorter memory; ~1.9 GB RAM |
+| smallest footprint, no adapter | LFM3-1.7B-QAD-Q4_0 | 131072 | ~2.7 GB RAM; the `models-v1` build |
+| tiny host, no adapter | LFM3-1.7B-QAD-Q4_0 | 32768 | ~1.9 GB RAM |
+
+Thinking is on by default in the LFM3 chat template. Either leave room in
+`max_tokens` for the reasoning pass, or pass
+`chat_template_kwargs: {"enable_thinking": false}` to skip it; a tight budget
+otherwise spends everything on reasoning and returns empty content.
+
+## Provenance of the `models-v4` pi build
+
+The only artifact here with a recorded build recipe. Everything below was run
+by hand; there is no CI for it.
+
+| Stage | Input / command |
+|-------|-----------------|
+| Base | `LiquidAI/LFM3-1.7B-GGUF` → `LFM3-1.7B-F16.gguf` (3.47 GB) |
+| Adapter | `harness-hub/LFM3-1.7B-pi-GGUF` → `LFM3-1.7B-harbor-pi-lora-F16.gguf` (66 MB, rank 32) |
+| Merge | `llama-export-lora -m LFM3-1.7B-F16.gguf --lora <adapter> -o merged-f16.gguf` (llama.cpp `a07831a`) |
+| Quantize | `llama-quantize merged-f16.gguf merged-Q6_K.gguf Q6_K` |
+| Package | `zipalign -j0 LFM3-1.7B-pi-Q6_K.llamafile LFM3-1.7B-pi-Q6_K.gguf .args` on a v0.10.7 runtime |
+
+The F16 base is used on purpose: the merge dequantizes to F32 and applies the
+delta, so merging into an already-quantized base would lock that error in.
+`.args` holds three lines (`-m`, `/zip/LFM3-1.7B-pi-Q6_K.gguf`, `...`), the same
+shape as `models-v1`. The adapter is baked into the weights, so there is no
+second file and no `--lora` flag at runtime.
+
+Checks run on the published file:
+
+- `unzip -l`: exactly the GGUF and `.args`, nothing inherited from the runtime
+  artifact it was carved from.
+- `/props`: `model_path = /zip/LFM3-1.7B-pi-Q6_K.gguf`, `n_ctx_slot = 131072`.
+- `/v1/chat/completions` with a tool schema returns `finish_reason: tool_calls`
+  and well-formed JSON arguments.
+- Against an unmerged control built through the same pipeline on the same
+  runtime, the merged model differs at temperature 0 on the same prompts, which
+  is what proves the adapter is live rather than silently dropped.
+
+What this build does **not** establish:
+
+- **Quality.** The upstream card reports +10.7 points and 37% fewer tool calls
+  for the adapter, measured with vLLM at BF16. That has never been reproduced
+  through llama.cpp, and a Q6_K quantization of the merge will not match it
+  exactly.
+- **Speed.** CPU generation measured ~4.3 tok/s on a 12-core shared VM. For
+  agent loops, serve a GGUF on a GPU host instead (see above).
 
 ## License of the weights
 
@@ -135,7 +190,10 @@ Compliance notes for redistribution:
 - **Pass the license on**: any recipient of the `.llamafile` (or a derivative
   work) must get a copy of LICENSE.LFM3 (Section 4(a)).
 - **Mark modifications**: modified files must carry prominent notices stating
-  that you changed them (Section 4(b)).
+  that you changed them (Section 4(b)). The `models-v4` build is such a
+  modification: [harness-hub/LFM3-1.7B-pi](https://huggingface.co/harness-hub/LFM3-1.7B-pi),
+  a LoRA adapter for LFM3-1.7B distributed under the same LFM terms, merged
+  into the base weights and re-quantized to Q6_K, then packaged as a llamafile.
 - **Commercial threshold**: Commercial Use is licensed only while you or your
   Legal Entity stays below the Threshold — annual revenue of $10,000,000 or
   more is *not* licensed under this Agreement (Section 5). Qualified
